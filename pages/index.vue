@@ -21,7 +21,15 @@
         </thead>
         <draggable v-model="list" tag="tbody" @change="log">
           <tr v-for="item in list" :key="item.name">
-            <td>{{ item.id }}</td>
+            <td>
+              <v-img
+                lazy-src="https://picsum.photos/id/11/10/6"
+                :src="item.avatar"
+                class="rounded"
+                max-height="35"
+                max-width="35"
+              ></v-img>
+            </td>
             <td>{{ item.ip }}</td>
             <td>{{ item.host }}</td>
             <td>{{ item.description }}</td>
