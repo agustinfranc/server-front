@@ -2,6 +2,13 @@
   <v-app dark>
     <v-app-bar :clipped-left="clipped" fixed app>
       <v-toolbar-title v-text="title" />
+
+      <v-spacer />
+
+      <v-btn icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
+        <v-icon v-if="!$vuetify.theme.dark">mdi-weather-sunny</v-icon>
+        <v-icon v-else>mdi-weather-night</v-icon>
+      </v-btn>
     </v-app-bar>
 
     <v-main>
@@ -23,7 +30,7 @@ export default {
       clipped: false,
       drawer: false,
       fixed: false,
-      title: 'Servers',
+      title: 'Servers Admin',
     }
   },
 }
