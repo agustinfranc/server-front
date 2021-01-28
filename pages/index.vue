@@ -34,7 +34,7 @@
             <td>{{ item.host }}</td>
             <td>{{ item.description }}</td>
             <td>
-              <v-btn icon small @click="getRequest(item.id)"
+              <v-btn icon small @click="sendRequest(item.id)"
                 ><v-icon>mdi-book-clock</v-icon></v-btn
               >
               <v-btn icon small @click="openDialog(item)"
@@ -293,8 +293,21 @@ export default {
       this.toggleSnackbar({ text: 'Imagen subida correctamente' })
     },
 
-    getRequest(id) {
-      console.log(id)
+    async sendRequest(id) {
+      try {
+        const res = await this.$axios.$post(`servers/${id}/request`, id)
+
+        console.log(res)
+
+        this.toggleSnackbar({ text: 'Consulta realizada correctamente' })
+      } catch (error) {
+        console.error(error)
+
+        this.toggleSnackbar({
+          text: error.response?.data?.message ?? 'Ocurrió un error',
+          color: 'red accent-4',
+        })
+      }
     },
 
     openDialog(item) {
