@@ -24,6 +24,12 @@ export const mutations = {
     Object.assign(state.list[editedIndex], payload)
   },
 
+  REMOVE_FROM_LIST(state, payload) {
+    const editedIndex = state.list.findIndex((e) => e.id === payload.id)
+
+    state.list = state.list.filter((e, i) => i !== editedIndex)
+  },
+
   SET_SNACKBAR(state, payload) {
     state.snackbar = payload
   },
@@ -40,6 +46,10 @@ export const actions = {
 
   replaceInList({ commit }, payload) {
     commit('REPLACE_IN_LIST', payload)
+  },
+
+  removeFromList({ commit }, payload) {
+    commit('REMOVE_FROM_LIST', payload)
   },
 
   toggleSnackbar({ commit }, { display, text, color, timeout }) {

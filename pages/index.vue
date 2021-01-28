@@ -32,7 +32,7 @@
               <v-btn icon small @click="openDialog(item)"
                 ><v-icon>mdi-pencil</v-icon></v-btn
               >
-              <v-btn icon small @click="deleteServer(item.id)"
+              <v-btn icon small @click="deleteServer(item)"
                 ><v-icon>mdi-delete</v-icon></v-btn
               >
             </td>
@@ -139,6 +139,27 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="dialogDelete" max-width="500px">
+      <v-card>
+        <v-card-title class="headline"
+          >Eliminar servidor {{ item.ip }}</v-card-title
+        >
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="dialogDelete = false"
+            >Cancelar</v-btn
+          >
+          <v-btn
+            :disabled="!btnDelete"
+            color="blue darken-1"
+            @click="deleteServerConfirm"
+            >Confirmar</v-btn
+          >
+          <v-spacer></v-spacer>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <Snackbar />
   </v-container>
 </template>
@@ -150,6 +171,7 @@ export default {
   data() {
     return {
       dialogItem: false,
+      dialogDelete: false,
       btnDelete: true,
       valid: true,
       loading: true,
@@ -280,31 +302,32 @@ export default {
       }
     },
 
-    deleteServer(id) {
-      console.log(id)
+    deleteServer(item) {
+      this.item = item
+      this.dialogDelete = true
     },
 
-    deleteServerConfirm() {
+    async deleteServerConfirm() {
       this.btnDelete = false
 
-      this.$axios
-        .delete(`api/auth/products/${this.item.id}`)
-        .then((res) => {
-          this.dialogDelete = false
+      try {
+        await this.$axios.$delete(`servers/${this.item.id}`)
 
-          this.toggleSnackbar({ text: 'Producto eliminado correctamente' })
+        this.dialogDelete = false
 
-          this.$fetch()
+        this.toggleSnackbar({ text: 'Servidor eliminado correctamente' })
+
+        this.$store.dispatch('removeFromList', this.item)
+      } catch (error) {
+        console.log(error)
+
+        this.toggleSnackbar({
+          text: error.message ?? 'Ocurrió un error',
+          color: 'red accent-4',
         })
-        .catch((error) => {
-          console.log(error)
-
-          this.toggleSnackbar({
-            text: error.message ?? 'Ocurrió un error',
-            color: 'red accent-4',
-          })
-        })
-        .finally(() => (this.btnDelete = true))
+      } finally {
+        this.btnDelete = true
+      }
     },
 
     changeAvatar(event) {
