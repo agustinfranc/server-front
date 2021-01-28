@@ -7,6 +7,15 @@ export default {
   // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
 
+  /*
+   ** Environment Variables
+   ** See https://nuxtjs.org/api/configuration-env/
+   */
+  env: {
+    baseURL: process.env.BASE_URL || 'http://localhost:8000/',
+    apiURL: process.env.API_URL || 'http://localhost:8000/api/',
+  },
+
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     titleTemplate: '%s - server-front',
@@ -46,7 +55,9 @@ export default {
   ],
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
-  axios: {},
+  axios: {
+    baseURL: process.env.BASE_URL || 'http://localhost:8000/',
+  },
 
   // Vuetify module configuration: https://go.nuxtjs.dev/config-vuetify
   vuetify: {
