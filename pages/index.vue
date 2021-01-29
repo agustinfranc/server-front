@@ -2,10 +2,12 @@
   <v-container>
     <div class="d-flex my-5">
       <div>
-        <div class="display-1">Servidores</div>
+        <div class="display-1">Servidores - {{ count }}</div>
       </div>
       <v-spacer></v-spacer>
-      <v-btn class="blue" @click.stop="openDialog()"> Nuevo servidor </v-btn>
+      <v-btn class="blue" @click.stop="openFormDialog()">
+        Nuevo servidor
+      </v-btn>
     </div>
 
     <v-simple-table>
@@ -19,7 +21,7 @@
             <th class="text-left">Acciones</th>
           </tr>
         </thead>
-        <draggable v-model="list" tag="tbody" @change="log">
+        <draggable v-model="list" tag="tbody" @change="moved">
           <tr v-for="item in list" :key="item.name">
             <td>
               <v-img
@@ -34,10 +36,35 @@
             <td>{{ item.host }}</td>
             <td>{{ item.description }}</td>
             <td>
-              <v-btn icon small @click="sendRequest(item.id)"
-                ><v-icon>mdi-book-clock</v-icon></v-btn
-              >
-              <v-btn icon small @click="openDialog(item)"
+              <v-tooltip bottom>
+                <template #activator="{ on, attrs }">
+                  <v-btn
+                    icon
+                    small
+                    v-bind="attrs"
+                    @click="sendRequest(item.id)"
+                    v-on="on"
+                    ><v-icon>mdi-book-clock</v-icon></v-btn
+                  >
+                </template>
+                <span>Consultar por SNMP</span>
+              </v-tooltip>
+
+              <v-tooltip bottom>
+                <template #activator="{ on, attrs }">
+                  <v-btn
+                    icon
+                    small
+                    v-bind="attrs"
+                    @click="openChartsDialog(item.id)"
+                    v-on="on"
+                    ><v-icon>mdi-chart-line</v-icon></v-btn
+                  >
+                </template>
+                <span>Ver gráficos</span>
+              </v-tooltip>
+
+              <v-btn icon small @click="openFormDialog(item)"
                 ><v-icon>mdi-pencil</v-icon></v-btn
               >
               <v-btn icon small @click="deleteServer(item)"
@@ -45,7 +72,6 @@
               >
             </td>
           </tr>
-          <!-- <button slot="footer" @click="addPeople">Add</button> -->
         </draggable>
       </template>
     </v-simple-table>
@@ -128,6 +154,7 @@
                       :error-messages="errors.description"
                       label="Descripcion"
                       rows="3"
+                      :counter="200"
                     ></v-textarea>
                   </v-col>
                 </v-row>
@@ -168,6 +195,52 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="dialogCharts">
+      <v-card>
+        <v-card-title>Graficos</v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col cols="6">
+              <h3>Procesos</h3>
+
+              <v-sheet color="rgba(0, 0, 0, .12)">
+                <v-sparkline
+                  :value="[20, 16, 11, 1, 28, 16]"
+                  :labels="[1, 2, 3, 4, 5, 6]"
+                  color="rgba(255, 255, 255, .7)"
+                  line-width="1"
+                  height="100"
+                  padding="10"
+                  stroke-linecap="round"
+                  smooth
+                >
+                  <!-- <template v-slot:label="item"> ${{ item.value }} </template> -->
+                </v-sparkline>
+              </v-sheet>
+            </v-col>
+            <v-col cols="6">
+              <h3>Procesos</h3>
+
+              <v-sheet color="rgba(0, 0, 0, .12)">
+                <v-sparkline
+                  :value="[20, 16, 11, 1, 28, 16]"
+                  :labels="[1, 2, 3, 4, 5, 6]"
+                  color="rgba(255, 255, 255, .7)"
+                  line-width="1"
+                  height="100"
+                  padding="10"
+                  stroke-linecap="round"
+                  smooth
+                >
+                  <!-- <template v-slot:label="item"> ${{ item.value }} </template> -->
+                </v-sparkline>
+              </v-sheet>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
     <Snackbar />
   </v-container>
 </template>
@@ -180,6 +253,7 @@ export default {
     return {
       dialogItem: false,
       dialogDelete: false,
+      dialogCharts: false,
       btnDelete: true,
       valid: true,
       loading: true,
@@ -220,13 +294,26 @@ export default {
         this.$store.dispatch('updateList', value)
       },
     },
+
+    count() {
+      return this.$store.state.list.length
+    },
   },
 
   methods: {
     ...mapActions(['toggleSnackbar']),
 
-    log(event) {
-      console.log(event)
+    async moved(event) {
+      try {
+        await this.$axios.$put('sort', { servers: this.list })
+      } catch (error) {
+        console.log(error)
+
+        this.toggleSnackbar({
+          text: error.response?.data?.message ?? 'Ocurrió un error',
+          color: 'red accent-4',
+        })
+      }
     },
 
     async submit() {
@@ -235,7 +322,7 @@ export default {
       this.valid = false
 
       try {
-        const endpoint = `servers`
+        const endpoint = 'servers'
 
         const res = this.item.id
           ? await this.$axios.$put(`${endpoint}/${this.item.id}`, this.item)
@@ -310,7 +397,7 @@ export default {
       }
     },
 
-    openDialog(item) {
+    openFormDialog(item) {
       this.dialogItem = true
 
       this.parseSelectedFile = ''
@@ -321,6 +408,10 @@ export default {
         host: '',
         description: '',
       }
+    },
+
+    openChartsDialog(id) {
+      this.dialogCharts = true
     },
 
     deleteServer(item) {
@@ -352,6 +443,21 @@ export default {
     },
 
     changeAvatar(event) {
+      if (
+        !event.target.files[0] ||
+        event.target.files[0].size >= 1048576 ||
+        (event.target.files[0].type !== 'image/jpeg' &&
+          event.target.files[0].type !== 'image/png' &&
+          event.target.files[0].type !== 'image/gif')
+      ) {
+        this.toggleSnackbar({
+          text: 'La imagen excede el tamaño máximo o no es un formato válido',
+          color: 'red accent-4',
+        })
+
+        return
+      }
+
       this.selectedFile = event.target.files[0]
       this.parseSelectedFile = URL.createObjectURL(this.selectedFile)
     },
