@@ -7,6 +7,10 @@ export const state = () => ({
     color: '',
     timeout: 4000,
   },
+
+  item: {},
+  parseSelectedFile: '',
+  dialogItem: true,
 })
 
 export const mutations = {
@@ -32,6 +36,14 @@ export const mutations = {
 
   SET_SNACKBAR(state, payload) {
     state.snackbar = payload
+  },
+
+  SET_ITEM(state, payload) {
+    state.item = payload
+  },
+
+  SET_PARSE_SELECTED_FILE(state, payload) {
+    state.parseSelectedFile = payload
   },
 }
 
@@ -59,5 +71,21 @@ export const actions = {
     timeout = timeout ?? 4000
 
     commit('SET_SNACKBAR', { display, text, color, timeout })
+  },
+
+  setItem({ commit }, payload) {
+    const item = { ...payload } || {
+      avatar: '',
+      ip: '',
+      host: '',
+      description: '',
+    }
+
+    commit('SET_ITEM', item)
+    commit('SET_PARSE_SELECTED_FILE', '')
+  },
+
+  setParseSelectedFile({ commit }, payload) {
+    commit('SET_PARSE_SELECTED_FILE', payload)
   },
 }

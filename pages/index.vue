@@ -77,101 +77,7 @@
     </v-simple-table>
 
     <v-dialog v-model="dialogItem">
-      <v-card>
-        <v-card-title>Servidor</v-card-title>
-
-        <v-card-text>
-          <v-form
-            ref="form"
-            v-model="valid"
-            lazy-validation
-            @submit.prevent="submit"
-          >
-            <v-row>
-              <v-col cols="12" sm="4" md="3" class="align-self-start">
-                <v-img
-                  v-if="!parseSelectedFile"
-                  lazy-src="https://picsum.photos/id/11/10/6"
-                  :src="item && item.avatar"
-                  class="rounded"
-                  :style="
-                    !item.avatar && !parseSelectedFile ? 'display: none' : ''
-                  "
-                ></v-img>
-                <v-img
-                  v-else
-                  lazy-src="https://picsum.photos/id/11/10/6"
-                  :src="parseSelectedFile"
-                  class="rounded"
-                  :style="
-                    !item.avatar && !parseSelectedFile ? 'display: none' : ''
-                  "
-                ></v-img>
-                <input
-                  ref="fileInput"
-                  class="mt-3 v-btn v-btn--block v-btn--contained theme--dark v-size--small accent"
-                  type="file"
-                  style="display: none"
-                  @input="changeAvatar"
-                />
-                <v-btn
-                  small
-                  block
-                  color="accent"
-                  class="mt-3"
-                  @click="$refs.fileInput.click()"
-                  >Subir Avatar</v-btn
-                >
-              </v-col>
-
-              <v-col cols="12" sm="8" md="9">
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="item.ip"
-                      :error-messages="errors.ip"
-                      :counter="50"
-                      label="IP"
-                      required
-                    ></v-text-field>
-                  </v-col>
-
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="item.host"
-                      :error-messages="errors.host"
-                      :counter="50"
-                      label="Host"
-                      required
-                    ></v-text-field>
-                  </v-col>
-                </v-row>
-
-                <v-row>
-                  <v-col cols="12" md="6" align-self="start">
-                    <v-textarea
-                      v-model="item.description"
-                      :error-messages="errors.description"
-                      label="Descripcion"
-                      rows="3"
-                      :counter="200"
-                    ></v-textarea>
-                  </v-col>
-                </v-row>
-              </v-col>
-            </v-row>
-
-            <v-btn
-              :disabled="!valid"
-              color="success"
-              class="mr-4"
-              @click="submit"
-            >
-              Guardar
-            </v-btn>
-          </v-form>
-        </v-card-text>
-      </v-card>
+      <Form @close="closeFormDialog" />
     </v-dialog>
 
     <v-dialog v-model="dialogDelete" max-width="500px">
@@ -202,16 +108,15 @@
 
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                class="mx-2"
-                x-small
-                v-bind="attrs"
-                v-on="on"
+              <v-btn icon class="mx-2" x-small v-bind="attrs" v-on="on"
                 ><v-icon>mdi-help-circle</v-icon></v-btn
               >
             </template>
-            <span>Procesos y sesiones en funcion del tiempo. Intervalo de {{ intervalScale }} segundos. Se muestran los ultimos {{ intervalNumber }} intervalos</span>
+            <span
+              >Procesos y sesiones en funcion del tiempo. Intervalo de
+              {{ intervalScale }} segundos. Se muestran los ultimos
+              {{ intervalNumber }} intervalos</span
+            >
           </v-tooltip>
         </v-card-title>
         <v-card-text>
@@ -229,8 +134,9 @@
                   padding="10"
                   stroke-linecap="round"
                   smooth
+                  :gradient="gradient"
+                  gradient-direction="top"
                 >
-                  <!-- <template v-slot:label="item"> ${{ item.value }} </template> -->
                 </v-sparkline>
               </v-sheet>
             </v-col>
@@ -247,8 +153,9 @@
                   padding="10"
                   stroke-linecap="round"
                   smooth
+                  :gradient="gradient"
+                  gradient-direction="top"
                 >
-                  <!-- <template v-slot:label="item"> ${{ item.value }} </template> -->
                 </v-sparkline>
               </v-sheet>
             </v-col>
@@ -263,16 +170,21 @@
 
 <script>
 import { mapActions } from 'vuex'
+import Form from '~/components/Form.vue'
 
 export default {
+  components: {
+    Form,
+  },
+
   data() {
     return {
-      dialogItem: false,
       dialogDelete: false,
       dialogCharts: false,
+      dialogItem: false,
       btnDelete: true,
-      valid: true,
       loading: true,
+
       item: {
         id: '',
         avatar: '',
@@ -280,15 +192,13 @@ export default {
         host: '',
         description: '',
       },
-      selectedFile: '',
-      parseSelectedFile: '',
-      errors: {},
 
       labels: [],
       sessions: [],
       processes: [],
       intervalScale: 1,
       intervalNumber: 1,
+      gradient: ['#f72047', '#ffd200', '#1feaea'],
     }
   },
 
@@ -323,83 +233,27 @@ export default {
   },
 
   methods: {
-    ...mapActions(['toggleSnackbar']),
+    ...mapActions(['toggleSnackbar', 'setItem']),
+
+    openFormDialog(item) {
+      this.dialogItem = true
+
+      this.setItem(item)
+    },
+
+    closeFormDialog() {
+      this.dialogItem = false
+    },
 
     async moved(event) {
       try {
         await this.$axios.$put('sort', { servers: this.list })
       } catch (error) {
-        console.log(error)
-
         this.toggleSnackbar({
           text: error.response?.data?.message ?? 'Ocurrió un error',
           color: 'red accent-4',
         })
       }
-    },
-
-    async submit() {
-      if (!this.$refs.form.validate()) return
-
-      this.valid = false
-
-      try {
-        const endpoint = 'servers'
-
-        const res = this.item.id
-          ? await this.$axios.$put(`${endpoint}/${this.item.id}`, this.item)
-          : await this.$axios.$post(endpoint, this.item)
-
-        this.item.id
-          ? this.$store.dispatch('replaceInList', res)
-          : this.$store.dispatch('addToList', res)
-
-        await this.uploadImage(res, this)
-
-        this.dialogItem = false
-
-        this.$refs.form.reset()
-
-        this.toggleSnackbar({ text: 'Nuevo servidor guardado' })
-      } catch (error) {
-        console.log(error)
-        this.errors = error.response?.data?.errors ?? {}
-
-        this.toggleSnackbar({
-          text: error.response?.data?.message ?? 'Ocurrió un error',
-          color: 'red accent-4',
-        })
-
-        setTimeout(() => this.$refs.form.resetValidation(), 3000)
-      } finally {
-        this.valid = true
-      }
-    },
-
-    async uploadImage(item, _this) {
-      if (!this.selectedFile) {
-        return
-      }
-
-      const fd = new FormData()
-      fd.append('image', this.selectedFile, this.selectedFile.name)
-
-      const serverId = item.id
-
-      const res = await this.$axios.$post(`servers/${serverId}/upload`, fd, {
-        onUploadProgress: (uploadEvent) => {
-          console.log(
-            'Upload Progress',
-            Math.round((uploadEvent.loaded / uploadEvent.total) * 100) + '%'
-          )
-        },
-      })
-
-      this.item.avatar = this.selectedFile.name
-
-      this.$store.dispatch('replaceInList', res)
-
-      this.toggleSnackbar({ text: 'Imagen subida correctamente' })
     },
 
     async sendRequest(id) {
@@ -408,25 +262,10 @@ export default {
 
         this.toggleSnackbar({ text: 'Consulta realizada correctamente' })
       } catch (error) {
-        console.error(error)
-
         this.toggleSnackbar({
           text: error.response?.data?.message ?? 'Ocurrió un error',
           color: 'red accent-4',
         })
-      }
-    },
-
-    openFormDialog(item) {
-      this.dialogItem = true
-
-      this.parseSelectedFile = ''
-
-      this.item = { ...item } || {
-        avatar: '',
-        ip: '',
-        host: '',
-        description: '',
       }
     },
 
@@ -449,8 +288,6 @@ export default {
         this.intervalScale = server.intervalScale
         this.intervalNumber = server.intervalNumber
       } catch (error) {
-        console.log(error)
-
         this.toggleSnackbar({
           text: error.message ?? 'Ocurrió un error',
           color: 'red accent-4',
@@ -475,8 +312,6 @@ export default {
 
         this.$store.dispatch('removeFromList', this.item)
       } catch (error) {
-        console.log(error)
-
         this.toggleSnackbar({
           text: error.message ?? 'Ocurrió un error',
           color: 'red accent-4',
@@ -484,26 +319,6 @@ export default {
       } finally {
         this.btnDelete = true
       }
-    },
-
-    changeAvatar(event) {
-      if (
-        !event.target.files[0] ||
-        event.target.files[0].size >= 1048576 ||
-        (event.target.files[0].type !== 'image/jpeg' &&
-          event.target.files[0].type !== 'image/png' &&
-          event.target.files[0].type !== 'image/gif')
-      ) {
-        this.toggleSnackbar({
-          text: 'La imagen excede el tamaño máximo o no es un formato válido',
-          color: 'red accent-4',
-        })
-
-        return
-      }
-
-      this.selectedFile = event.target.files[0]
-      this.parseSelectedFile = URL.createObjectURL(this.selectedFile)
     },
   },
 }
