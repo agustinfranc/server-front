@@ -113,7 +113,7 @@
               >
             </template>
             <span
-              >Procesos y sesiones en funcion del tiempo. Intervalo de
+              >Promedio de procesos y sesiones en funcion del tiempo. Intervalo de
               {{ intervalScale }} segundos. Se muestran los ultimos
               {{ intervalNumber }} intervalos</span
             >
