@@ -197,16 +197,32 @@
 
     <v-dialog v-model="dialogCharts">
       <v-card>
-        <v-card-title>Graficos</v-card-title>
+        <v-card-title>
+          Graficos
+
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                class="mx-2"
+                x-small
+                v-bind="attrs"
+                v-on="on"
+                ><v-icon>mdi-help-circle</v-icon></v-btn
+              >
+            </template>
+            <span>Procesos y sesiones en funcion del tiempo. Intervalo de {{ intervalScale }} segundos. Se muestran los ultimos {{ intervalNumber }} intervalos</span>
+          </v-tooltip>
+        </v-card-title>
         <v-card-text>
           <v-row>
             <v-col cols="6">
-              <h3>Procesos</h3>
+              <h3 class="my-1">Procesos</h3>
 
               <v-sheet color="rgba(0, 0, 0, .12)">
                 <v-sparkline
-                  :value="[20, 16, 11, 1, 28, 16]"
-                  :labels="[1, 2, 3, 4, 5, 6]"
+                  :value="processes"
+                  :labels="labels"
                   color="rgba(255, 255, 255, .7)"
                   line-width="1"
                   height="100"
@@ -219,12 +235,12 @@
               </v-sheet>
             </v-col>
             <v-col cols="6">
-              <h3>Procesos</h3>
+              <h3 class="my-1">Sesiones</h3>
 
               <v-sheet color="rgba(0, 0, 0, .12)">
                 <v-sparkline
-                  :value="[20, 16, 11, 1, 28, 16]"
-                  :labels="[1, 2, 3, 4, 5, 6]"
+                  :value="sessions"
+                  :labels="labels"
                   color="rgba(255, 255, 255, .7)"
                   line-width="1"
                   height="100"
@@ -267,6 +283,12 @@ export default {
       selectedFile: '',
       parseSelectedFile: '',
       errors: {},
+
+      labels: [],
+      sessions: [],
+      processes: [],
+      intervalScale: 1,
+      intervalNumber: 1,
     }
   },
 
@@ -382,9 +404,7 @@ export default {
 
     async sendRequest(id) {
       try {
-        const res = await this.$axios.$post(`servers/${id}/request`, id)
-
-        console.log(res)
+        await this.$axios.$post(`servers/${id}/request`, id)
 
         this.toggleSnackbar({ text: 'Consulta realizada correctamente' })
       } catch (error) {
@@ -410,8 +430,32 @@ export default {
       }
     },
 
-    openChartsDialog(id) {
+    async openChartsDialog(id) {
       this.dialogCharts = true
+
+      try {
+        const server = await this.$axios.$get(`servers/${id}`)
+
+        this.processes = server.requests.map((e) => parseInt(e.process) ?? 0)
+        this.sessions = server.requests.map((e) => parseInt(e.session) ?? 0)
+        this.labels = server.requests.map((e) => {
+          const unixTimestamp = parseInt(e.timestamp * 1000)
+          const date = new Date(unixTimestamp)
+          const hour = date.getHours()
+          const minutes = date.getMinutes()
+          return `${hour}:${minutes}`
+        })
+
+        this.intervalScale = server.intervalScale
+        this.intervalNumber = server.intervalNumber
+      } catch (error) {
+        console.log(error)
+
+        this.toggleSnackbar({
+          text: error.message ?? 'Ocurrió un error',
+          color: 'red accent-4',
+        })
+      }
     },
 
     deleteServer(item) {
