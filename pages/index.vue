@@ -113,8 +113,8 @@
               >
             </template>
             <span
-              >Promedio de procesos y sesiones en funcion del tiempo. Intervalo de
-              {{ intervalScale }} segundos. Se muestran los ultimos
+              >Promedio de procesos y sesiones en funcion del tiempo. Intervalo
+              de {{ intervalScale }} segundos. Se muestran los ultimos
               {{ intervalNumber }} intervalos</span
             >
           </v-tooltip>
