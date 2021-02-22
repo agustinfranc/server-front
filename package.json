@@ -15,7 +15,7 @@
     "@nuxtjs/axios": "^5.12.5",
     "@nuxtjs/dotenv": "^1.4.0",
     "core-js": "^3.8.2",
-    "nuxt": "^2.14.12",
+    "nuxt": "^2.15.1",
     "sortablejs": "^1.13.0",
     "vuedraggable": "^2.24.3",
     "vuelidate": "^0.7.6"
